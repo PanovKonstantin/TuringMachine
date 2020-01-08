@@ -1,4 +1,4 @@
-from tape import Tape
+from turing_machine import Tape
 
 
 def test_init():

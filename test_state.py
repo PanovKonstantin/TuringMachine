@@ -1,4 +1,4 @@
-from states import State
+from turing_machine import State
 
 
 def test_init():

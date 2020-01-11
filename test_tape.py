@@ -72,8 +72,8 @@ def test_show():
     assert test_tape.show(4) == '_001101__\n    ^    '
 
 
-def test_show_all():
+def test_show_tape():
     test_tape = Tape("1010110")
-    assert test_tape.show_all() == "1010110"
+    assert test_tape.show_tape() == "1010110"
     test_tape.p_cells[3] = '1'
-    assert test_tape.show_all() == "1011110"
+    assert test_tape.show_tape() == "1011110"

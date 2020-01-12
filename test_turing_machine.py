@@ -77,7 +77,7 @@ def test_is_stop():
 def test_show():
     with open("test.txt", 'r') as f:
         machine = TuringMachine(*convert_text_for_init(f.read()))
-    assert machine.show() == '__001\n  ^  \nState: 1\n'
+    assert machine.show() == '__001\n  ^  \nState: 1'
 
 
 def test_show_tape():
@@ -94,13 +94,13 @@ def test_step():
         machine = TuringMachine(*convert_text_for_init(f.read()))
     machine.step()
     assert machine.state == '1'
-    assert machine.show() == '_1010\n  ^  \nState: 1\n'
+    assert machine.show() == '_1010\n  ^  \nState: 1'
     machine.step()
     assert machine.state == '1'
-    assert machine.show() == '11100\n  ^  \nState: 1\n'
+    assert machine.show() == '11100\n  ^  \nState: 1'
     machine.step()
     assert machine.state == '2'
-    assert machine.show() == '1000_\n  ^  \nState: 2\n'
+    assert machine.show() == '1000_\n  ^  \nState: 2'
 
 
 def test_start():
@@ -111,7 +111,12 @@ def test_start():
 
 
 def test_wrong_type_data():
-    with pytest.raises(TypeError):
-        TuringMachine("0101010", ['00', '0', '1', '_'],
-                            [['1', ['1', 'R', '1'],
-                            ['0', 'R', '1'],['_', 'S', 'stop']]])
+    with open("test_wrong_type_data.txt", 'r') as f:
+        with pytest.raises(TypeError):
+            TuringMachine(*convert_text_for_init(f.read()))
+
+def test_repr():
+    with open("test.txt", 'r') as f:
+        machine = TuringMachine(*convert_text_for_init(f.read()))
+        assert machine.__repr__() == (['0', '0', '1', '0', '0'],
+                                    1, 0)

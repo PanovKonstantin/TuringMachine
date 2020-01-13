@@ -1,10 +1,7 @@
-from sys import argv
-import os
-
 class TuringMachine:
     """
     Turing machine. Reads and chages content of a tape accordingly to states.
-    
+
     :param tape: The tape in the Turing's machine.
     :type tape: Tape.
 
@@ -264,7 +261,7 @@ class Tape:
         self.n_cells = []
         self.head = 0
 
-        
+
 def convert_text_for_init(text):
     lines = text.split('\n')
     tape = lines[0]
@@ -282,7 +279,6 @@ def convert_text_for_init(text):
             state[i] = state[i].split()
         converted_states.append(state)
     return tape, alphabet, converted_states
-
 
 
 if __name__ == "__main__":

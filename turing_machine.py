@@ -270,7 +270,7 @@ def convert_text_for_init(text):
     for symbol in alphabet:
         if len(symbol) != 1:
             raise TypeError(f"{symbol} is not a singal symbol")
-    alphabet.append('_')
+    alphabet.append('_')  # trzeba usunąc
     states = lines[2:]
     converted_states = []
     for state in states:

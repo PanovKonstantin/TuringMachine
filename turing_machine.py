@@ -14,6 +14,10 @@ class TuringMachine:
     :param state: Current state.
     :type state: Integer.
     """
+    @staticmethod
+    def check_alfabet_correctness(tape):
+        pass
+
     def __init__(self, tape, alphabet, states):
         """
         Constructs the turing machine.
@@ -138,6 +142,7 @@ class State():
             self.cases[symbol] =\
                  [state_info[i][0], state_info[i][1], state_info[i][2]]
             i += 1
+        self.cases["_"] = ["_", "S", "stop"]
 
 
 class Tape:
@@ -270,7 +275,6 @@ def convert_text_for_init(text):
     for symbol in alphabet:
         if len(symbol) != 1:
             raise TypeError(f"{symbol} is not a singal symbol")
-    alphabet.append('_')  # trzeba usunąc
     states = lines[2:]
     converted_states = []
     for state in states:

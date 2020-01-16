@@ -4,11 +4,10 @@ import pytest
 
 def test_convert_text_for_init():
     with open("test.txt", 'r') as f:
-        assert convert_text_for_init(f.read()) == ("00100", 
-                            ['0', '1', '_'],[['2',['1','R','2'],
-                            ['0','R','2'], ['_', 'S', 'stop']],
-                            ['1', ['1', 'R', '1'], ['0', 'R', '2'],
-                            ['_', 'S', 'stop']]] )
+        assert convert_text_for_init(f.read()) == ("00100",
+                            ['0', '1'],[['2',['1','R','2'],
+                            ['0','R','2']], ['1', ['1', 'R', '1'],
+                            ['0', 'R', '2'],]])
 
 def test_init():
     with open("test.txt", 'r') as f:
@@ -16,7 +15,7 @@ def test_init():
     assert machine.tape.head == 0
     assert machine.tape.p_cells == ['0', '0', '1', '0', '0']
     assert machine.tape.n_cells == []
-    assert machine.alphabet == ['0', '1', '_']
+    assert machine.alphabet == ['0', '1']
     assert machine.states[0].index == '1'
     assert machine.states[0].cases == {'0': ['1', 'R', '1'],
                                        '1': ['0', 'R', '2'],

@@ -79,7 +79,7 @@ def test_show_tape():
     test_tape.p_cells[3] = '1'
     assert test_tape.show_tape() == '1011110'
 
+
 def test_repr_tape():
     test_tape = Tape('1010110')
-    assert test_tape.__repr__() == ['1','0','1','0','1','1','0']
-    
+    assert test_tape.__repr__() == ['1', '0', '1', '0', '1', '1', '0']

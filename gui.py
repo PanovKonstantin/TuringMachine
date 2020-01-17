@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.font as font
 from tkinter import filedialog
 
-from turing_machine import TuringMachine, convert_text_for_init
+from turing_machine import TuringMachine
 
 
 class GUI():
@@ -36,7 +36,7 @@ class GUI():
                                           title="Select file",
                                           filetypes=(("text files", "*.txt"),
                                                      ("all files", "*.*")))
-        self.machine = TuringMachine(*convert_text_for_init(filename.read()))
+        self.machine = TuringMachine(*TuringMachine.convert_text_for_init(filename.read()))
         self.clear_first_set()
         self.create_second_set()
 
@@ -47,16 +47,23 @@ class GUI():
     def create_third_set(self):
         self.create_tape_interface()
         self.create_alphabet_interface()
-        self.startStateEntryButton = tk.Button(self.root,
-                                               text="Start states input.",
-                                               command=self.state_input)
-        self.startStateEntryButton.grid(row=5, sticky="E")
+        startStateEntryButton = tk.Button(self.root,
+                                          text="Start states input.",
+                                          command=self.state_input)
+        startStateEntryButton.grid(row=5, sticky="E")
+        self.third_set.append(startStateEntryButton)
 
     def state_input(self):
-        self.alphabetConfirm_command()
-        self.tapeConfirm_command()
-        self.clear_third_set()
-        self.create_forth_set()
+        self.alphabet_data = self.alphabetInput.get().split()
+        if not TuringMachine.is_alphabet_correct(self.alphabet_data):
+            notConfirmed = tk.Label(text="Every symbol in alphabet must be a single character")
+            notConfirmed.grid(row=6)
+            self.third_set.append(notConfirmed)
+        else:
+            self.alphabet_data.append('_')
+            self.tapeConfirm_command()
+            self.clear_third_set()
+            self.create_forth_set()
 
     def create_forth_set(self):
         self.state_count = 0
@@ -80,7 +87,7 @@ class GUI():
                                   command=self.createMachine_command)
         createMachine.grid(row=0, column=3)
         back = tk.Button(text="Back",
-                         command=self.back_command)
+                         command=self.back_4_command)
         back.grid(row=0, column=4)
         self.forth_set.append(addState)
         self.forth_set.append(back)
@@ -89,7 +96,7 @@ class GUI():
         self.state_entries = []
         self.create_state_line()
 
-    def back_command(self):
+    def back_4_command(self):
         self.clear_forth_set()
         self.create_third_set()
 
@@ -136,10 +143,7 @@ class GUI():
             self.state_entries.append(stateInstraction)
 
     def clear_third_set(self):
-        for widget in (self.tapeInput, self.tapeInputLabel,
-                       self.tapeHint, self.alphabetHint,
-                       self.alphabetInput, self.alphabetInputLabel,
-                       self.startStateEntryButton):
+        for widget in self.third_set:
             widget.destroy()
 
     def create_tape_interface(self):
@@ -147,28 +151,32 @@ class GUI():
         self.tapeInputLabel = tk.Label(self.root,
                                        text="Enter your tape here:",
                                        font=0)
-        self.tapeHint = tk.Label(self.root,
-                                 text="Hint: Line of characters without spaces. One character = One cell on a tape.")
+        tapeHint = tk.Label(self.root,
+                            text="Hint: Line of characters without spaces. One character = One cell on a tape.")
         self.tapeInput.grid(row=1, column=1, sticky="W")
         self.tapeInputLabel.grid(row=1, column=0, sticky="W")
-        self.tapeHint.grid(row=2, columnspan=2, sticky="W")
+        tapeHint.grid(row=2, columnspan=2, sticky="W")
+        self.third_set = []
+        self.third_set.append(self.tapeInput)
+        self.third_set.append(self.tapeInputLabel)
+        self.third_set.append(tapeHint)
 
     def create_alphabet_interface(self):
         self.alphabetInput = tk.Entry(self.root)
         self.alphabetInputLabel = tk.Label(self.root,
                                            text="Enter your alphabet here:",
                                            font=0)
-        self.alphabetHint = tk.Label(self.root,
-                                     text="Hint: Singal Charachters, separated by space")
+        alphabetHint = tk.Label(self.root,
+                                text="Hint: Singal Charachters, separated by space")
         self.alphabetInputLabel.grid(row=3, sticky="W")
         self.alphabetInput.grid(row=3, column=1, sticky="W")
-        self.alphabetHint.grid(row=4, columnspan=2, sticky="W")
+        alphabetHint.grid(row=4, columnspan=2, sticky="W")
+        self.third_set.append(alphabetHint)
+        self.third_set.append(self.alphabetInput)
+        self.third_set.append(self.alphabetInputLabel)
 
     def tapeConfirm_command(self):
         self.tape_data = str(self.tapeInput.get())
-
-    def alphabetConfirm_command(self):
-        self.alphabet_data = self.alphabetInput.get().split()
 
     def create_second_set(self):
         self.tape_peek()

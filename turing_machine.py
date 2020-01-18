@@ -1,8 +1,6 @@
 from sys import argv
-import tkinter as tk
-import tkinter.font as font
-from tkinter import filedialog, Text
-import os
+
+
 class TuringMachine:
     """
     Turing machine. Reads and chages content of a tape accordingly to states.
@@ -19,20 +17,110 @@ class TuringMachine:
     :param state: Current state.
     :type state: Integer.
     """
+
+    class TuringMachineError(Exception):
+        pass
+
+    @staticmethod
+    def convert_text_for_init(text):
+        """
+        Convert the text from the file, given in a particular form
+        Returns three values: Tape, Alphabet and list of every given state
+        Returns tape as a list if string
+        Ret
+        """
+        lines = text.split('\n')
+        tape = lines[0]
+        alphabet = lines[1]
+        alphabet = alphabet.split(' ')
+        TuringMachine.is_alphabet_correct(alphabet)
+        states = lines[2:]
+        converted_states = []
+        for state in states:
+            state = state.split(", ")
+            for i in range(1, len(state)):
+                state[i] = state[i].split()
+            converted_states.append(state)
+        if TuringMachine.is_tape_correct(tape, alphabet):
+            raise TuringMachine.TuringMachineError("There are symbols in the tape, that don't appear in the alphabet")
+        if not TuringMachine.is_alphabet_correct(alphabet):
+            raise TuringMachine.TuringMachineError(f"Alphabet is incorrect")
+        if TuringMachine.does_alphabet_repeats(alphabet):
+            raise TuringMachine.TuringMachineError(f"Symbols in alphabet shoudln't apear twice")
+        if not TuringMachine.can_machine_stop(converted_states):
+            raise TuringMachine.TuringMachineError("Turing machine must have at least one final state")
+        return tape, alphabet, converted_states
+
+    @staticmethod
+    def is_alphabet_correct(alphabet):
+        """
+        If alphabet contains underline and every element is a single
+        symbol returns True
+        """
+        does_contain_underline = False
+        for symbol in alphabet:
+            if symbol == '_':
+                does_contain_underline = True
+            if len(symbol) != 1:
+                return False
+        return does_contain_underline
+
+    @staticmethod
+    def is_tape_correct(tape, alphabet):
+        for cell in tape:
+            cell_value_is_in_alphabet = False
+            for symbol in alphabet:
+                if cell == symbol:
+                    cell_value_is_in_alphabet = True
+                    break
+                if not cell_value_is_in_alphabet:
+                    return False
+        return True
+
+    @staticmethod
+    def can_machine_stop(states):
+        for state in states:
+            for intsraction in state[1:]:
+                for next_state in intsraction:
+                    if next_state == "stop":
+                        return True
+        return False
+
+    @staticmethod
+    def does_alphabet_repeats(alphabet):
+        for i in range(len(alphabet)-1):
+            for j in range(1, len(alphabet)):
+                if alphabet[i] == alphabet[j]:
+                    return False
+        return True
+
     def __init__(self, tape, alphabet, states):
         """
         Constructs the turing machine.
         """
         self.tape = Tape(tape)
-        for symbol in alphabet:
-            if len(symbol) != 1:
-                raise TypeError(f"{symbol} is not a singal symbol")
         self.alphabet = alphabet
         self.states = []
         for state in states:
             self.states.append(State(state, self.alphabet))
         self.states = sorted(self.states, key=lambda state: state.index)
         self.state = 1
+        self.step_counter = 0
+
+    def __repr__(self):
+        """
+        Returns the tape, current state, and current step
+        """
+        return self.tape.__repr__(), self.state, self.step_counter
+
+    def __str__(self):
+        """
+        Returns fragment of tape, which contains the current cell and 5 cells around
+        them fom both sides, current state and current step.
+        """
+        info = self.show(5)
+        info += f"\nStep: {self.step_counter}"
+        return info
 
     def write(self, value):
         """
@@ -67,16 +155,22 @@ class TuringMachine:
         """
         return self.states[int(self.state)-1].cases[self.tape.read()]
 
-    def show(self):
+    def show(self, radius=2):
         """
         Returns two lines.
         First:  Content of the current cell and given number (default - 2)
                 of nearest cells from both sides in the ascending order.
         Second: Line, which indicates current cell with symbol "^".
         """
-        info = self.tape.show()
-        info += f"\nState: {self.state}\n"
-        return info
+        tape = self.tape.show(radius=radius)
+        head = '^'
+        for _ in range(radius):
+            head += ' '
+            head = ' ' + head
+        tape += '\n'
+        tape += head
+        tape += f"\nState: {self.state}"
+        return tape
 
     def show_tape(self):
         """
@@ -91,15 +185,29 @@ class TuringMachine:
         write, move, self.state = self.current_instruction()
         self.write(write)
         self.move(move)
+        self.step_counter += 1
 
     def start(self):
+        """
+        Stars the machine.
+        Calls "step" methods until the next states is "stop"
+        """
         while not self.is_stop():
             self.step()
+            print(self.show())  # Printing cells near the head of the machine
         self.result()
 
     def result(self):
         with open("result.txt", 'w') as f:
             f.write(self.show_tape())
+
+    def restart(self):
+        """
+        Resets the machine's parameters to the initial state.
+        """
+        self.state = 1
+        self.step_counter = 0
+        self.tape.restart()
 
 
 class State():
@@ -111,10 +219,22 @@ class State():
     :param cases: Describes instructions for every element of the alphabet.
     :type cases: Dictionary.
     """
+
     def __init__(self, state_info, alphabet):
         """
         Constructs the state.
         """
+
+        class StateError(Exception):
+            pass
+
+        if len(state_info) - 1 != len(alphabet):
+            raise StateError("Machine is incomplete or nondeterministic")
+        for intsraction, symbol in zip(state_info[1:], alphabet):
+            if len(intsraction) != 3:
+                raise StateError("Every instraction has exactly 3 values")
+            if intsraction[1] != 'R' and intsraction != 'L':
+                raise StateError(f"Machine can move only (R)igth or (L)eft: {intsraction[1]}")
         self.index = state_info[0]
         self.cases = dict()
         i = 1
@@ -137,15 +257,30 @@ class Tape:
     :param n_cells: Cells on the tape with negative indexes.
     :type n_cells: List of strings.
     """
+
     def __init__(self, tape):
         """
         Constructs the tape.
         """
         self.head = 0
+        self.default_tape = tape
         self.p_cells = []
         for i in range(len(tape)):
             self.p_cells.append(tape[i])
         self.n_cells = []
+
+    def __repr__(self):
+        """
+        Returs every cell on the tape
+        """
+        cells = self.n_cells + self.p_cells
+        return cells
+
+    def __str__(self):
+        """
+        Returs every cell on the tape
+        """
+        return self.show_tape()
 
     def read(self):
         """
@@ -206,12 +341,7 @@ class Tape:
         Second: Line, which indicates current cell with symbol "^".
         """
         line = ''
-        head = ''
         for cell in range(self.head-radius, self.head+radius+1):
-            if cell == self.head:
-                head += '^'
-            else:
-                head += ' '
             if cell >= 0:
                 if len(self.p_cells) > cell:
                     line += self.p_cells[cell]
@@ -222,9 +352,7 @@ class Tape:
                     line += self.n_cells[abs(cell)-1]
                 else:
                     line += '_'
-        line += '\n'
-        display = line + head
-        return display
+        return line
 
     def show_tape(self):
         """
@@ -237,77 +365,24 @@ class Tape:
             tape += self.p_cells[i]
         return tape
 
+    def restart(self):
+        """
+        Resets every cell on the tape to the initial values
+        and the head to the start cell (0).
+        """
+        self.p_cells = []
+        for i in range(len(self.default_tape)):
+            self.p_cells.append(self.default_tape[i])
+        self.n_cells = []
+        self.head = 0
 
-class GUI():
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.resizable(False, False)
-        self.buttons = []
-        self.font_for_buttons = font.Font(size=15)
-        openFile = tk.Button(self.root,
-                                text="Load input from file",
-                                font = self.font_for_buttons,
-                                command=self.button_load_input_from_file)
-        self.buttons.append(openFile)
-        for button in self.buttons:
-            button.grid(padx=10, pady=5)
-        self.font_for_label = font.Font(size=30)
-    
-    def button_load_input_from_file(self):
-        filename = filedialog.askopenfile(initialdir="/",
-                                            title="Select file",
-                                            filetypes=(("text files",
-                                            "*.txt"),("all files","*.*"))) 
-        self.machine = TuringMachine(*convert_text_for_init(filename.read()))
-        self.clear_buttons()
-        self.tape_peek()
-        step = tk.Button(self.root, text="Make a step",
-                            font = self.font_for_buttons,
-                            command=self.step)
-        start = tk.Button(self.root, text="Complete the task",
-                            font = self.font_for_buttons,
-                            command=self.start)
-        start.grid(padx=10, pady=5)
-        step.grid(padx=10, pady=5)
-
-    def start(self):
-        self.machine.start() 
-        self.label.destroy()
-        self.tape_peek()
-        
-    def step(self):
-        self.machine.step()  
-        self.label.destroy()
-        self.tape_peek()
-
-    def clear_buttons(self):
-        for button in self.buttons:
-            button.destroy()
-
-    def tape_peek(self):
-        tape = self.machine.show()
-        self.label = tk.Label(self.root, text=tape,
-                              font=self.font_for_label)
-        self.label.grid(row=0)
-
-def convert_text_for_init(text):
-    lines = text.split('\n')
-    tape = lines[0]
-    alphabet = lines[1]
-    alphabet = alphabet.split(', ')
-    for symbol in alphabet:
-        if len(symbol) != 1:
-            raise TypeError(f"{symbol} is not a singal symbol")
-    alphabet.append('_')
-    states = lines[2:]
-    converted_states = []
-    for state in states:
-        state = state.split(", ")
-        for i in range(1, len(state)):
-            state[i] = state[i].split()
-        converted_states.append(state)
-    return tape, alphabet, converted_states
 
 if __name__ == "__main__":
-    gui = GUI()
-    gui.root.mainloop()
+    if argv[1] is None:  # if an argument wasnt given starts User interface
+        import gui
+        gui1 = gui.GUI()
+        gui1.root.mainloop()
+    else:                # if an argument was given opens the file from the path that was
+        with open(argv[1], "r") as f:  # given in the argument
+            machine = TuringMachine(*TuringMachine.convert_text_for_init(f.read()))
+            machine.start()
